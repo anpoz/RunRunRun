@@ -1,0 +1,26 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <!--导航栏底色-->
+        <item name="colorPrimary">@color/primary</item>
+        <!--状态栏底色-->
+        <item name="colorPrimaryDark">@color/primary_dark</item>
+        <!--按钮选中或者点击获得焦点后的颜色-->
+        <item name="colorAccent">@color/accent</item>
+        <item name="colorControlActivated">@color/primary_dark</item>
+        <item name="divider">@color/divider</item>
+        <item name="android:textCursorDrawable">@color/accent</item>
+    </style>
+
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>
+
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light"/>
+
+    <style name="AppTheme.Dialog" parent="Theme.AppCompat.DayNight.Dialog">
+        <!--按钮选中或者点击获得焦点后的颜色-->
+        <item name="colorAccent">@color/accent</item>
+        <item name="android:windowNoTitle">false</item>
+    </style>
+
+</resources>

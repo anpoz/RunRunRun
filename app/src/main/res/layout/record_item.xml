@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/tv_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="false">
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_weight="1.5"
+                android:layout_width="0dp"
+                android:layout_height="36dp">
+
+                <ImageView
+                    android:id="@+id/image_run"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/ic_directions_run_black_36dp"
+                    android:contentDescription="@string/detail_distance_unit"/>
+
+                <TextView
+                    android:id="@+id/tv_distance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom"
+                    android:textSize="22sp"
+                    android:textStyle=""
+                    tools:text="11"/>
+
+                <TextView
+                    android:id="@+id/label_distance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom"
+                    android:text="@string/detail_distance_unit"/>
+            </LinearLayout>
+
+
+            <TextView
+                android:id="@+id/tv_runtime"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:drawableLeft="@drawable/ic_schedule_black_24dp"
+                android:drawableStart="@drawable/ic_schedule_black_24dp"
+                tools:text="44444"/>
+
+            <TextView
+                android:id="@+id/tv_calorie"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                tools:text="2323"
+                android:drawableLeft="@drawable/ic_local_cafe_black_24dp"
+                android:drawableStart="@drawable/ic_local_cafe_black_24dp"/>
+
+        </LinearLayout>
+
+</LinearLayout>
