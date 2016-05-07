@@ -15,14 +15,11 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.google.gson.GsonBuilder;
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.activity.RunningActivity;
 import com.playcode.runrunrun.utils.APIUtils;
+import com.playcode.runrunrun.utils.RetrofitHelper;
 
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
-import retrofit2.converter.gson.GsonConverterFactory;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
@@ -67,16 +64,7 @@ public class ConfirmWeightDialog extends Dialog {
         mEditText = textInputLayout.getEditText();
         Button button = (Button) findViewById(R.id.btn_weight_confirm);
 
-        textInputLayout.setHint("体重(kg)");
-
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://codeczx.duapp.com/FitServer/")
-                .addConverterFactory(GsonConverterFactory.create(
-                        new GsonBuilder()
-                                .setDateFormat("yyyy-MM-dd HH:mm:ss.S")
-                                .create()))
-                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-                .build();
+        textInputLayout.setHint(mContext.getString(R.string.user_profile_weight));
 
         SharedPreferences preferences = mContext.getSharedPreferences("UserData", 0);
         String token = preferences.getString("token", "");
@@ -86,7 +74,7 @@ public class ConfirmWeightDialog extends Dialog {
             String str = mEditText.getText().toString();
 
             if (TextUtils.isEmpty(str)) {
-                Toast.makeText(mContext, "体重不能为空！", Toast.LENGTH_SHORT).show();
+                Toast.makeText(mContext, R.string.weight_cant_null, Toast.LENGTH_SHORT).show();
                 dismiss();
                 return;
             }
@@ -97,7 +85,8 @@ public class ConfirmWeightDialog extends Dialog {
                 editor.putFloat("weight", weight);
                 editor.apply();
 
-                retrofit.create(APIUtils.class)
+                RetrofitHelper.getInstance()
+                        .getService(APIUtils.class)
                         .setWeigth(token, weight)
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
@@ -108,13 +97,13 @@ public class ConfirmWeightDialog extends Dialog {
                                 Intent intent = new Intent(mContext, RunningActivity.class);
                                 mContext.startActivity(intent);
                             } else {
-                                Toast.makeText(mContext, "请输入20~200之间的数", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(mContext, R.string.please_input_20_200_weight, Toast.LENGTH_SHORT).show();
                                 dismiss();
                             }
                         });
 
             } else {
-                Toast.makeText(mContext, "请输入20~200之间的数", Toast.LENGTH_SHORT).show();
+                Toast.makeText(mContext, R.string.please_input_20_200_weight, Toast.LENGTH_SHORT).show();
                 dismiss();
             }
         });

@@ -8,20 +8,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.google.gson.GsonBuilder;
-import com.orangegangsters.github.swipyrefreshlayout.library.SwipyRefreshLayout;
-import com.orangegangsters.github.swipyrefreshlayout.library.SwipyRefreshLayoutDirection;
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.model.RecordsEntity;
 import com.playcode.runrunrun.utils.APIUtils;
 import com.playcode.runrunrun.utils.AccessUtils;
+import com.playcode.runrunrun.utils.RetrofitHelper;
 import com.playcode.runrunrun.utils.ToastUtils;
 
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
-import retrofit2.converter.gson.GsonConverterFactory;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
@@ -34,9 +28,6 @@ public class MainFragment extends Fragment {
     private TextView count;
     private TextView time;
 
-    private Retrofit mRetrofit;
-
-
     public MainFragment() {
         // Required empty public constructor
     }
@@ -47,15 +38,7 @@ public class MainFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-        //初始化retrofit
-        mRetrofit = new Retrofit.Builder()
-                .baseUrl("http://codeczx.duapp.com/FitServer/")
-                .addConverterFactory(GsonConverterFactory.create(
-                        new GsonBuilder()
-                                .setDateFormat("yyyy-MM-dd HH:mm:ss.S")
-                                .create()))
-                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-                .build();
+
         initView(rootView);
 //        initData();
         return rootView;
@@ -71,7 +54,9 @@ public class MainFragment extends Fragment {
         String token = setting.getString("token", "0");
         if (token.equals(""))
             return;
-        mRetrofit.create(APIUtils.class)
+
+        RetrofitHelper.getInstance()
+                .getService(APIUtils.class)
                 .getUserRecords(token)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())

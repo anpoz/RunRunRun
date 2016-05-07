@@ -33,13 +33,13 @@ import com.amap.api.services.geocoder.GeocodeSearch;
 import com.amap.api.services.geocoder.RegeocodeAddress;
 import com.amap.api.services.geocoder.RegeocodeQuery;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.model.MessageModel;
 import com.playcode.runrunrun.model.RecordsEntity;
 import com.playcode.runrunrun.utils.APIUtils;
 import com.playcode.runrunrun.utils.AccessUtils;
 import com.playcode.runrunrun.utils.BOSUtils;
+import com.playcode.runrunrun.utils.RetrofitHelper;
 
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
@@ -49,9 +49,6 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
-import retrofit2.converter.gson.GsonConverterFactory;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
@@ -62,7 +59,7 @@ import rx.schedulers.Schedulers;
 public class RunningActivity extends AppCompatActivity implements AMapLocationListener, LocationSource,
         AMap.OnMapLoadedListener, View.OnClickListener {
 
-    private static final int MIN_ALLOW_DISTANCE = 1;
+    private static final int MIN_ALLOW_DISTANCE = 30;
     private AMapLocationClient locationClient;
     private AMapLocationClientOption locationClientOption;
     private AMap aMap;
@@ -87,12 +84,7 @@ public class RunningActivity extends AppCompatActivity implements AMapLocationLi
     private String token;
     private float weight;
 
-    public static final String BASE_URL = "http://codeczx.duapp.com/FitServer/";
-
-
     private Subscription mTimer;
-    private Retrofit mRetrofit;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,18 +99,18 @@ public class RunningActivity extends AppCompatActivity implements AMapLocationLi
         init(savedInstanceState);
 
         if (!AccessUtils.isNetworkConnected(this)) {
-            Toast.makeText(this, "网络未连接~", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.network_unconnect, Toast.LENGTH_SHORT).show();
             RunningActivity.this.finish();
         }
 
         if (!AccessUtils.isGPSEnabled(this)) {
             new AlertDialog
                     .Builder(this)
-                    .setTitle("必须开启GPS才能使功能正常运行，是否开启？")
-                    .setPositiveButton("不开启", (dialog, which) -> {
+                    .setTitle(getString(R.string.gps_warning))
+                    .setPositiveButton(getString(R.string.dont_offer), (dialog, which) -> {
                         RunningActivity.this.finish();
                     })
-                    .setNegativeButton("前往开启", (dialog, which) -> {
+                    .setNegativeButton(getString(R.string.go_offer), (dialog, which) -> {
                         Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                         startActivityForResult(intent, 0);
                     })
@@ -140,15 +132,6 @@ public class RunningActivity extends AppCompatActivity implements AMapLocationLi
         locationClient.setLocationOption(locationClientOption);
         //启动定位，调用onLocationChange
         locationClient.startLocation();
-
-        mRetrofit = new Retrofit.Builder()
-                .baseUrl(BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create(
-                        new GsonBuilder()
-                                .setDateFormat("yyyy-MM-dd HH:mm:ss.S")
-                                .create()))
-                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-                .build();
 
     }
 
@@ -299,7 +282,8 @@ public class RunningActivity extends AppCompatActivity implements AMapLocationLi
         runRecord.setCalorie(calorie);
         runRecord.setDistance(distance);
 
-        return mRetrofit.create(APIUtils.class)
+        return RetrofitHelper.getInstance()
+                .getService(APIUtils.class)
                 .add("add", token, date,
                         String.valueOf(distance), String.valueOf(calorie)
                         , String.valueOf(runTime), runRecord.getPointsKey(), address);
@@ -409,7 +393,7 @@ public class RunningActivity extends AppCompatActivity implements AMapLocationLi
                     points.add(currentLatLng);
                     if (points.size() >= 2) {
                         distance += AMapUtils.calculateLineDistance(points.get(points.size() - 1), points.get(points.size() - 2));
-                        String disStr = String.format(Locale.getDefault(),"%.2f", distance / 1000);
+                        String disStr = String.format(Locale.getDefault(), "%.2f", distance / 1000);
                         showDistance.setText(disStr);
                     }
                 }

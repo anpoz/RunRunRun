@@ -16,17 +16,14 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import com.google.gson.GsonBuilder;
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.model.MessageModel;
 import com.playcode.runrunrun.utils.APIUtils;
+import com.playcode.runrunrun.utils.RetrofitHelper;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
-import retrofit2.converter.gson.GsonConverterFactory;
 import rx.Observer;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -56,8 +53,9 @@ public class RegisterDialog extends Dialog {
         mOnRegSuccessListener = onRegSuccessListener;
     }
 
-    public interface OnRegSuccessListener{
+    public interface OnRegSuccessListener {
         void success();
+
         void cancel();
     }
 
@@ -76,7 +74,7 @@ public class RegisterDialog extends Dialog {
     }
 
     private void setupDialog() {
-        setTitle("注册");
+        setTitle(R.string.reg);
 
         Window dialogWindow = getWindow();
 
@@ -104,9 +102,9 @@ public class RegisterDialog extends Dialog {
 
         mProgressBar = (ProgressBar) findViewById(R.id.pb_go_register);
 
-        mUsernameInputLayout.setHint("昵称");
-        mPasswordInputLayout.setHint("密码");
-        mEmailInputLayout.setHint("E-mail");
+        mUsernameInputLayout.setHint(mContext.getString(R.string.user_profile_name));
+        mPasswordInputLayout.setHint(mContext.getString(R.string.password));
+        mEmailInputLayout.setHint(mContext.getString(R.string.e_mail));
 
         mUsernameInputLayout.setErrorEnabled(true);
         mPasswordInputLayout.setErrorEnabled(true);
@@ -114,7 +112,7 @@ public class RegisterDialog extends Dialog {
 
         buttonCancel.setOnClickListener((v) -> {
             dismiss();
-            if (mOnRegSuccessListener!=null){
+            if (mOnRegSuccessListener != null) {
                 mOnRegSuccessListener.cancel();
             }
         });
@@ -131,17 +129,17 @@ public class RegisterDialog extends Dialog {
             String email = mEmailEditText.getText().toString();
 
             if (!checkUsernameType(username)) {
-                mUsernameInputLayout.setError("昵称格式不合法");
+                mUsernameInputLayout.setError(mContext.getString(R.string.name_format_error));
                 mButtonOk.setVisibility(View.VISIBLE);
                 mProgressBar.setVisibility(View.GONE);
                 return;
             } else if (!checkPasswordType(password)) {
-                mPasswordInputLayout.setError("密码格式不合法");
+                mPasswordInputLayout.setError(mContext.getString(R.string.password_format_error));
                 mButtonOk.setVisibility(View.VISIBLE);
                 mProgressBar.setVisibility(View.GONE);
                 return;
             } else if (!checkEmailType(email)) {
-                mEmailInputLayout.setError("E-mail格式不合法");
+                mEmailInputLayout.setError(mContext.getString(R.string.email_format_error));
                 mButtonOk.setVisibility(View.VISIBLE);
                 mProgressBar.setVisibility(View.GONE);
                 return;
@@ -156,30 +154,22 @@ public class RegisterDialog extends Dialog {
     }
 
     private void regNewUser(String username, String password, String email) {
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://codeczx.duapp.com/FitServer/")
-                .addConverterFactory(GsonConverterFactory.create(
-                        new GsonBuilder()
-                                .setDateFormat("yyyy-MM-dd HH:mm:ss.S")
-                                .create()))
-                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-                .build();
 
-        retrofit.create(APIUtils.class)
+        RetrofitHelper.getInstance()
+                .getService(APIUtils.class)
                 .userReg(username, password, email)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<MessageModel>() {
                     @Override
                     public void onCompleted() {
-                        Log.d(getClass().toString(), "onCompleted");
                     }
 
                     @Override
                     public void onError(Throwable e) {
                         mButtonOk.setVisibility(View.VISIBLE);
                         mProgressBar.setVisibility(View.GONE);
-                        mEmailInputLayout.setError("注册失败~网络错误");
+                        mEmailInputLayout.setError(mContext.getString(R.string.reg_failed_network_error));
                     }
 
                     @Override
@@ -189,20 +179,20 @@ public class RegisterDialog extends Dialog {
                             case 0:
                                 dismiss();
 //                                Snackbar.make(getOwnerActivity().getCurrentFocus(), "注册成功！", Snackbar.LENGTH_SHORT).show();
-                                Toast.makeText(mContext, "注册成功", Toast.LENGTH_SHORT).show();
-                                if (mOnRegSuccessListener!=null){
+                                Toast.makeText(mContext, R.string.reg_success, Toast.LENGTH_SHORT).show();
+                                if (mOnRegSuccessListener != null) {
                                     mOnRegSuccessListener.success();
                                 }
                                 break;
                             case 1:
                                 mButtonOk.setVisibility(View.VISIBLE);
                                 mProgressBar.setVisibility(View.GONE);
-                                mEmailInputLayout.setError("注册失败~E-mail已被占用");
+                                mEmailInputLayout.setError(mContext.getString(R.string.reg_failed_email_had_been_token));
                                 break;
                             default:
                                 mButtonOk.setVisibility(View.VISIBLE);
                                 mProgressBar.setVisibility(View.GONE);
-                                mEmailInputLayout.setError("注册失败~网络错误");
+                                mEmailInputLayout.setError(mContext.getString(R.string.reg_failed_network_error));
                         }
                     }
                 });

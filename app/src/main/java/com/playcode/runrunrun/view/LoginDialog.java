@@ -17,18 +17,15 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import com.google.gson.GsonBuilder;
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.model.LoginModel;
 import com.playcode.runrunrun.model.UserModel;
 import com.playcode.runrunrun.utils.APIUtils;
+import com.playcode.runrunrun.utils.RetrofitHelper;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
-import retrofit2.converter.gson.GsonConverterFactory;
 import rx.Observer;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
@@ -50,8 +47,6 @@ public class LoginDialog extends Dialog {
 
     private ProgressBar mProgressBar;
 
-    private Retrofit retrofit;
-
     private OnLoginListener mOnLoginListener;
 
     public interface OnLoginListener {
@@ -71,20 +66,13 @@ public class LoginDialog extends Dialog {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.dialog_login);
-        retrofit = new Retrofit.Builder()
-                .baseUrl("http://codeczx.duapp.com/FitServer/")
-                .addConverterFactory(GsonConverterFactory.create(
-                        new GsonBuilder()
-                                .setDateFormat("yyyy-MM-dd HH:mm:ss.S")
-                                .create()))
-                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-                .build();
+
         initView();
         setupDialog();
     }
 
     private void setupDialog() {
-        setTitle("登录");
+        setTitle(R.string.login);
 
         Window dialogWindow = getWindow();
 
@@ -110,8 +98,8 @@ public class LoginDialog extends Dialog {
 
         mProgressBar = (ProgressBar) findViewById(R.id.pb_go_login);
 
-        mEmailInputLayout.setHint("E-mail");
-        mPasswordInputLayout.setHint("密码");
+        mEmailInputLayout.setHint(mContext.getString(R.string.e_mail));
+        mPasswordInputLayout.setHint(mContext.getString(R.string.password));
         mEmailInputLayout.setErrorEnabled(true);
         mPasswordInputLayout.setErrorEnabled(true);
 
@@ -144,12 +132,12 @@ public class LoginDialog extends Dialog {
             String password = mPasswordEditText.getText().toString();
 
             if (!checkEmailType(email)) {
-                mEmailInputLayout.setError("E-mail格式不合法");
+                mEmailInputLayout.setError(mContext.getString(R.string.email_format_error));
                 mButtonOk.setVisibility(View.VISIBLE);
                 mProgressBar.setVisibility(View.GONE);
                 return;
             } else if (!checkPasswordType(password)) {
-                mPasswordInputLayout.setError("密码格式不合法");
+                mPasswordInputLayout.setError(mContext.getString(R.string.password_format_error));
                 mButtonOk.setVisibility(View.VISIBLE);
                 mProgressBar.setVisibility(View.GONE);
                 return;
@@ -163,14 +151,14 @@ public class LoginDialog extends Dialog {
     }
 
     private void doLogin(final String email, String password) {
-        retrofit.create(APIUtils.class)
+        RetrofitHelper.getInstance()
+                .getService(APIUtils.class)
                 .userLogin(password, email)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<LoginModel>() {
                     @Override
                     public void onCompleted() {
-                        Log.d(getClass().toString(), "onCompleted");
                         mButtonOk.setVisibility(View.VISIBLE);
                         mProgressBar.setVisibility(View.GONE);
                     }
@@ -179,7 +167,7 @@ public class LoginDialog extends Dialog {
                     public void onError(Throwable e) {
                         mButtonOk.setVisibility(View.VISIBLE);
                         mProgressBar.setVisibility(View.GONE);
-                        mEmailInputLayout.setError("登录失败~网络错误");
+                        mEmailInputLayout.setError(mContext.getString(R.string.login_failed_network_error));
                         e.printStackTrace();
                     }
 
@@ -189,7 +177,7 @@ public class LoginDialog extends Dialog {
                         switch (loginModel.getResultCode()) {
                             case 0://success
                                 dismiss();
-                                Toast.makeText(mContext, "登陆成功", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(mContext, R.string.login_success, Toast.LENGTH_SHORT).show();
                                 getUser(loginModel.getToken());
                                 break;
                             case 1:
@@ -201,7 +189,8 @@ public class LoginDialog extends Dialog {
     }
 
     private void getUser(String token) {
-        retrofit.create(APIUtils.class)
+        RetrofitHelper.getInstance()
+                .getService(APIUtils.class)
                 .getUser(token)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())

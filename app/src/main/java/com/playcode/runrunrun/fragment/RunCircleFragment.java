@@ -16,7 +16,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import com.google.gson.GsonBuilder;
 import com.orangegangsters.github.swipyrefreshlayout.library.SwipyRefreshLayout;
 import com.orangegangsters.github.swipyrefreshlayout.library.SwipyRefreshLayoutDirection;
 import com.playcode.runrunrun.R;
@@ -26,15 +25,13 @@ import com.playcode.runrunrun.model.RecordsEntity;
 import com.playcode.runrunrun.model.RunCircleResultModel;
 import com.playcode.runrunrun.utils.APIUtils;
 import com.playcode.runrunrun.utils.AccessUtils;
+import com.playcode.runrunrun.utils.RetrofitHelper;
 import com.playcode.runrunrun.utils.ToastUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
-import retrofit2.converter.gson.GsonConverterFactory;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;
@@ -51,8 +48,6 @@ public class RunCircleFragment extends Fragment implements SwipyRefreshLayout.On
 
     private List<RecordsEntity> list;
     private int lastItemId = 0;
-
-    private Retrofit retrofit;
 
 
     public RunCircleFragment() {
@@ -75,16 +70,6 @@ public class RunCircleFragment extends Fragment implements SwipyRefreshLayout.On
     private void initView(View rootView) {
         mSwipeRefreshLayout = (SwipyRefreshLayout) rootView.findViewById(R.id.srl_runCircle);
         mRecyclerView = (RecyclerView) rootView.findViewById(R.id.rv_runCircle);
-
-        //初始化retrofit
-        retrofit = new Retrofit.Builder()
-                .baseUrl("http://codeczx.duapp.com/FitServer/")
-                .addConverterFactory(GsonConverterFactory.create(
-                        new GsonBuilder()
-                                .setDateFormat("yyyy-MM-dd HH:mm:ss.S")
-                                .create()))
-                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-                .build();
 
         mSwipeRefreshLayout.setOnRefreshListener(this);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -147,10 +132,12 @@ public class RunCircleFragment extends Fragment implements SwipyRefreshLayout.On
 
     private void refreshData(String token) {
 
-        retrofit.create(APIUtils.class)
+        RetrofitHelper.getInstance()
+                .getService(APIUtils.class)
                 .getMaxId()
                 .subscribeOn(Schedulers.io())
-                .flatMap(maxIdModel -> retrofit.create(APIUtils.class)
+                .flatMap(maxIdModel -> RetrofitHelper.getInstance()
+                        .getService(APIUtils.class)
                         .getRecordsById(maxIdModel.getId(), token))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Subscriber<RunCircleResultModel>() {
@@ -184,7 +171,8 @@ public class RunCircleFragment extends Fragment implements SwipyRefreshLayout.On
     }
 
     private void loadMore(String token) {
-        retrofit.create(APIUtils.class)
+        RetrofitHelper.getInstance()
+                .getService(APIUtils.class)
                 .getRecordsById(lastItemId - 1, token)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())

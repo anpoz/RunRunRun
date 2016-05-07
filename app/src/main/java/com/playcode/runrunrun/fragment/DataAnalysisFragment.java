@@ -9,19 +9,19 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.google.gson.GsonBuilder;
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.model.RecordsEntity;
 import com.playcode.runrunrun.utils.APIUtils;
 import com.playcode.runrunrun.utils.AccessUtils;
+import com.playcode.runrunrun.utils.RetrofitHelper;
 import com.playcode.runrunrun.utils.ToastUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.TimeZone;
 
 import lecho.lib.hellocharts.gesture.ZoomType;
@@ -32,9 +32,6 @@ import lecho.lib.hellocharts.model.LineChartData;
 import lecho.lib.hellocharts.model.PointValue;
 import lecho.lib.hellocharts.model.ValueShape;
 import lecho.lib.hellocharts.view.LineChartView;
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
-import retrofit2.converter.gson.GsonConverterFactory;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
@@ -43,7 +40,6 @@ import rx.schedulers.Schedulers;
  */
 public class DataAnalysisFragment extends Fragment {
 
-    private Retrofit mRetrofit;
     private List<RecordsEntity> mList;
     private LineChartView mLineChartView;
     private LineChartData data;
@@ -68,25 +64,13 @@ public class DataAnalysisFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_data_analysis, container, false);
         initView(rootView);
 
-        //初始化retrofit
-        mRetrofit = new Retrofit.Builder()
-                .baseUrl("http://codeczx.duapp.com/FitServer/")
-                .addConverterFactory(GsonConverterFactory.create(
-                        new GsonBuilder()
-                                .setDateFormat("yyyy-MM-dd HH:mm:ss.S")
-                                .create()))
-                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-                .build();
-
-//        initChart();
-
         return rootView;
     }
 
     private void initChart() {
         if (!AccessUtils.isNetworkConnected(getContext())) {
 //            Toast.makeText(getActivity(), "网络未连接~", Toast.LENGTH_SHORT).show();
-            ToastUtils.showToast(getActivity(),"网络未连接~");
+            ToastUtils.showToast(getActivity(), "网络未连接~");
             return;
         }
 
@@ -119,7 +103,8 @@ public class DataAnalysisFragment extends Fragment {
     }
 
     private void prepareData(String token) {
-        mRetrofit.create(APIUtils.class)
+        RetrofitHelper.getInstance()
+                .getService(APIUtils.class)
                 .getUserRecords(token)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -133,12 +118,13 @@ public class DataAnalysisFragment extends Fragment {
     private void setupSummary() {
         float longestTime = 0;
         float longestDistance = 0;
-        float avgSpeed = 0;
-        float avgTime = 0;
+        float avgSpeed;
+        float avgTime;
         float totalDistance = 0;
         float totalTime = 0;
 
-        SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss");
+        SimpleDateFormat format = new SimpleDateFormat(getContext().getString(R.string.time_format),
+                Locale.getDefault());
 
         if (mList == null || mList.size() == 0) {
             return;
@@ -157,12 +143,13 @@ public class DataAnalysisFragment extends Fragment {
         avgTime = totalTime / mList.size();
         avgSpeed = (float) (totalDistance / totalTime / 3.6);
 
-        mTextViewLongestDistance.setText(String.format("%.2f", longestDistance / 1000) + "km");
+        mTextViewLongestDistance.setText(String.format(Locale.getDefault(),
+                "%.2fkm", longestDistance / 1000));
         mTextViewLongestTime.setText(format.format(new Date((long) (longestTime * 1000) -
                 TimeZone.getTimeZone("GMT+8:00").getRawOffset())));
         mTextViewAvgTime.setText(format.format(new Date((long) (avgTime * 1000) -
                 TimeZone.getTimeZone("GMT+8:00").getRawOffset())));
-        mTextViewAvgSpeed.setText(String.format("%.2f", avgSpeed) + "km/h");
+        mTextViewAvgSpeed.setText(String.format(Locale.getDefault(), "%.2fkm/h", avgSpeed));
     }
 
     private void setupChart() {
@@ -178,7 +165,8 @@ public class DataAnalysisFragment extends Fragment {
             for (int i = 0; i < size; i++) {
                 PointValue pointValue = new PointValue();
                 pointValue.set(i + 1, mList.get(i).getDistance() / 1000);
-                pointValue.setLabel(String.format("%.2f", mList.get(i).getDistance() / 1000));
+                pointValue.setLabel(String.format(Locale.getDefault(), "%.2f",
+                        mList.get(i).getDistance() / 1000));
                 values.add(pointValue);
             }
         }

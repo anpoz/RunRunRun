@@ -222,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
     private void setupHeader() {
         //设置头像
         SharedPreferences setting = getSharedPreferences("UserData", 0);
-        String username = setting.getString("username", "请登陆");
+        String username = setting.getString("username", getString(R.string.login_please));
         String photoKey = setting.getString("photoUrl", "");
 
         mUsername.setText(username);

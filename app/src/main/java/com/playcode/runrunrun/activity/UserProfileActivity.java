@@ -12,13 +12,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.gson.GsonBuilder;
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.model.MessageModel;
 import com.playcode.runrunrun.utils.APIUtils;
 import com.playcode.runrunrun.utils.AccessUtils;
 import com.playcode.runrunrun.utils.BOSUtils;
 import com.playcode.runrunrun.utils.CircleTransformation;
+import com.playcode.runrunrun.utils.RetrofitHelper;
 import com.squareup.picasso.Picasso;
 
 import java.io.ByteArrayInputStream;
@@ -27,9 +27,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.UUID;
 
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
-import retrofit2.converter.gson.GsonConverterFactory;
 import rx.Observable;
 import rx.Observer;
 import rx.android.schedulers.AndroidSchedulers;
@@ -39,8 +36,6 @@ public class UserProfileActivity extends AppCompatActivity {
 
     private final static int RESULT_LOAD_IMAGE = 1;
     private final static int RESULT_CROP_IMAGE = 2;
-
-    private Retrofit mRetrofit;
 
     private ImageView mImageView;
     private int avatarSize;
@@ -52,16 +47,6 @@ public class UserProfileActivity extends AppCompatActivity {
         setContentView(R.layout.activity_user_profile);
 
         initView();
-
-        //初始化retrofit
-        mRetrofit = new Retrofit.Builder()
-                .baseUrl("http://codeczx.duapp.com/FitServer/")
-                .addConverterFactory(GsonConverterFactory.create(
-                        new GsonBuilder()
-                                .setDateFormat("yyyy-MM-dd HH:mm:ss.S")
-                                .create()))
-                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-                .build();
     }
 
     private void initView() {
@@ -155,7 +140,9 @@ public class UserProfileActivity extends AppCompatActivity {
                                 .deleteFile(photoKey);
                     return s;
                 })
-                .flatMap(s -> mRetrofit.create(APIUtils.class).updatePhotoInfo(photoName, token))
+                .flatMap(s -> RetrofitHelper.getInstance()
+                        .getService(APIUtils.class)
+                        .updatePhotoInfo(photoName, token))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<MessageModel>() {
                     @Override

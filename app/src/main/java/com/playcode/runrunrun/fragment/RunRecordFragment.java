@@ -15,23 +15,19 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import com.google.gson.GsonBuilder;
 import com.playcode.runrunrun.R;
-import com.playcode.runrunrun.activity.RunningActivity;
 import com.playcode.runrunrun.activity.ShowDetailActivity;
 import com.playcode.runrunrun.adapter.RunRecordAdapter;
 import com.playcode.runrunrun.model.RecordsEntity;
 import com.playcode.runrunrun.model.UserRecordModel;
 import com.playcode.runrunrun.utils.APIUtils;
 import com.playcode.runrunrun.utils.AccessUtils;
+import com.playcode.runrunrun.utils.RetrofitHelper;
 import com.playcode.runrunrun.utils.ToastUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
-import retrofit2.converter.gson.GsonConverterFactory;
 import rx.Observer;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -82,15 +78,6 @@ public class RunRecordFragment extends Fragment {
         dialog.setTitle("正在读取数据...");
         dialog.show();
 
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(RunningActivity.BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create(
-                        new GsonBuilder()
-                                .setDateFormat("yyyy-MM-dd HH:mm:ss.S")
-                                .create()))
-                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-                .build();
-
         SharedPreferences preferences = getContext().getSharedPreferences("UserData", 0);
         String token = preferences.getString("token", "");
 
@@ -99,7 +86,8 @@ public class RunRecordFragment extends Fragment {
             return;
         }
 
-        retrofit.create(APIUtils.class)
+        RetrofitHelper.getInstance()
+                .getService(APIUtils.class)
                 .getUserRecords(token)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
