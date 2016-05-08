@@ -13,9 +13,7 @@ import android.widget.TextView;
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.model.RecordsEntity;
 import com.playcode.runrunrun.utils.APIUtils;
-import com.playcode.runrunrun.utils.AccessUtils;
 import com.playcode.runrunrun.utils.RetrofitHelper;
-import com.playcode.runrunrun.utils.ToastUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -68,11 +66,11 @@ public class DataAnalysisFragment extends Fragment {
     }
 
     private void initChart() {
-        if (!AccessUtils.isNetworkConnected(getContext())) {
-//            Toast.makeText(getActivity(), "网络未连接~", Toast.LENGTH_SHORT).show();
-            ToastUtils.showToast(getActivity(), "网络未连接~");
-            return;
-        }
+//        if (!AccessUtils.isNetworkConnected(getContext())) {
+////            Toast.makeText(getActivity(), "网络未连接~", Toast.LENGTH_SHORT).show();
+//            ToastUtils.showToast(getActivity(), "网络未连接~");
+//            return;
+//        }
 
         SharedPreferences preferences = getActivity().getSharedPreferences("UserData", 0);
         String token = preferences.getString("token", "");

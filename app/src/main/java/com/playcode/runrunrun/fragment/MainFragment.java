@@ -12,9 +12,7 @@ import android.widget.TextView;
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.model.RecordsEntity;
 import com.playcode.runrunrun.utils.APIUtils;
-import com.playcode.runrunrun.utils.AccessUtils;
 import com.playcode.runrunrun.utils.RetrofitHelper;
-import com.playcode.runrunrun.utils.ToastUtils;
 
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -45,11 +43,11 @@ public class MainFragment extends Fragment {
     }
 
     private void initData() {
-        if (!AccessUtils.isNetworkConnected(getContext())) {
-//            Toast.makeText(getActivity(), "网络未连接~", Toast.LENGTH_SHORT).show();
-            ToastUtils.showToast(getActivity(),"网络未连接~");
-            return;
-        }
+//        if (!AccessUtils.isNetworkConnected(getContext())) {
+////            Toast.makeText(getActivity(), "网络未连接~", Toast.LENGTH_SHORT).show();
+//            ToastUtils.showToast(getActivity(),"网络未连接~");
+//            return;
+//        }
         SharedPreferences setting = getActivity().getSharedPreferences("UserData", 0);
         String token = setting.getString("token", "0");
         if (token.equals(""))

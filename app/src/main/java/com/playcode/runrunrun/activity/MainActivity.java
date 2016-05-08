@@ -240,6 +240,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         File file = new File(String.format("%s%s%s.tmp", getExternalCacheDir().getPath(), File.separator, photoKey));
+
         BOSUtils.getInstance()
                 .getFileWithKey(file, photoKey)
                 .subscribeOn(Schedulers.io())

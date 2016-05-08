@@ -4,13 +4,11 @@ package com.playcode.runrunrun.fragment;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,15 +22,11 @@ import com.playcode.runrunrun.adapter.RunCircleAdapter;
 import com.playcode.runrunrun.model.RecordsEntity;
 import com.playcode.runrunrun.model.RunCircleResultModel;
 import com.playcode.runrunrun.utils.APIUtils;
-import com.playcode.runrunrun.utils.AccessUtils;
 import com.playcode.runrunrun.utils.RetrofitHelper;
-import com.playcode.runrunrun.utils.ToastUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
@@ -91,24 +85,12 @@ public class RunCircleFragment extends Fragment implements SwipyRefreshLayout.On
     }
 
     private void initRunCircle() {
-        if (!AccessUtils.isNetworkConnected(getContext())) {
-//            Toast.makeText(getActivity(), "网络未连接~", Toast.LENGTH_SHORT).show();
-            ToastUtils.showToast(getActivity(), "网络未连接~");
-            return;
-        }
         SharedPreferences preferences = getActivity().getSharedPreferences("UserData", 0);
         String token = preferences.getString("token", "");
         if (TextUtils.isEmpty(token)) {
-            Toast.makeText(getActivity(), "请先登录", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), R.string.login_please, Toast.LENGTH_SHORT).show();
             return;
         }
-        Observable.timer(100, TimeUnit.MILLISECONDS)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(aLong -> {
-                    if (!mSwipeRefreshLayout.isRefreshing()) {
-                        mSwipeRefreshLayout.setRefreshing(true);
-                    }
-                });
 
         refreshData(token);
     }
@@ -116,14 +98,12 @@ public class RunCircleFragment extends Fragment implements SwipyRefreshLayout.On
     @Override
     public void onRefresh(SwipyRefreshLayoutDirection direction) {
         if (direction == SwipyRefreshLayoutDirection.TOP) {//下拉刷新
-            Log.d("onfresh", "下拉");
             initRunCircle();
         } else if (direction == SwipyRefreshLayoutDirection.BOTTOM) {//上拉加载更多
-            Log.d("onfresh", "上拉");
             SharedPreferences preferences = getActivity().getSharedPreferences("UserData", 0);
             String token = preferences.getString("token", "");
             if (TextUtils.isEmpty(token)) {
-                Toast.makeText(getActivity(), "请先登录", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), R.string.login_please, Toast.LENGTH_SHORT).show();
                 return;
             }
             loadMore(token);
@@ -148,7 +128,8 @@ public class RunCircleFragment extends Fragment implements SwipyRefreshLayout.On
 
                     @Override
                     public void onError(Throwable e) {
-                        Snackbar.make(mRecyclerView, "网络错误，刷新失败...", Snackbar.LENGTH_SHORT).show();
+                        Toast.makeText(getActivity(), R.string.refresh_failed_network,
+                                Toast.LENGTH_SHORT).show();
                         mSwipeRefreshLayout.setRefreshing(false);
                     }
 
@@ -157,14 +138,14 @@ public class RunCircleFragment extends Fragment implements SwipyRefreshLayout.On
                         if (runCircleResultModel.getResultCode() == 0) {
                             list = runCircleResultModel.getRecords();
                             mRunCircleAdapter.resetData(list);
-                            Log.d("initRunCircle", "刷新运动圈数据" + list.size() + "条");
-                            mSwipeRefreshLayout.setRefreshing(false);
                             lastItemId = runCircleResultModel.getRecords()
                                     .get(runCircleResultModel.getRecords().size() - 1)
                                     .getId();
-                            Log.d("initRunCircle", "lastItemId:" + lastItemId);
                         } else {
-                            Snackbar.make(mRecyclerView, "刷新失败，" + runCircleResultModel.getMessage(), Snackbar.LENGTH_SHORT).show();
+                            Toast.makeText(getActivity(),
+                                    getContext().getString(R.string.refresh_failed_reason) +
+                                            runCircleResultModel.getMessage(), Toast.LENGTH_SHORT)
+                                    .show();
                         }
                     }
                 });
@@ -179,14 +160,13 @@ public class RunCircleFragment extends Fragment implements SwipyRefreshLayout.On
                 .subscribe(new Observer<RunCircleResultModel>() {
                     @Override
                     public void onCompleted() {
-                        Log.d("initRunCircle", "加载运动圈数据onComplete");
                         mSwipeRefreshLayout.setRefreshing(false);
                     }
 
                     @Override
                     public void onError(Throwable e) {
                         e.printStackTrace();
-                        Snackbar.make(mRecyclerView, "网络错误，加载失败...", Snackbar.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), R.string.load_failed_network, Toast.LENGTH_SHORT).show();
                         mSwipeRefreshLayout.setRefreshing(false);
                     }
 
@@ -198,12 +178,12 @@ public class RunCircleFragment extends Fragment implements SwipyRefreshLayout.On
                                 lastItemId = runCircleResultModel.getRecords()
                                         .get(runCircleResultModel.getRecords().size() - 1)
                                         .getId();
-                                Log.d("initRunCircle", "lastItemId:" + lastItemId);
                             } else {
-                                Snackbar.make(mRecyclerView, "没有更多了", Snackbar.LENGTH_SHORT).show();
+                                Toast.makeText(getContext(), R.string.no_more, Toast.LENGTH_SHORT).show();
                             }
                         } else {
-                            Snackbar.make(mRecyclerView, "加载失败，" + runCircleResultModel.getMessage(), Snackbar.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), getContext().getString(R.string.load_failed_reason) +
+                                    runCircleResultModel.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     }
                 });

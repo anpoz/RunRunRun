@@ -90,7 +90,7 @@ public class UserProfileActivity extends AppCompatActivity {
         }
         String photoKey = setting.getString("photoUrl", "");
 
-        setupPhoto(photoKey);
+//        setupPhoto(photoKey);
     }
 
     @Override

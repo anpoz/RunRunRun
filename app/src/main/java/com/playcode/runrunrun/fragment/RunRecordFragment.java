@@ -21,9 +21,7 @@ import com.playcode.runrunrun.adapter.RunRecordAdapter;
 import com.playcode.runrunrun.model.RecordsEntity;
 import com.playcode.runrunrun.model.UserRecordModel;
 import com.playcode.runrunrun.utils.APIUtils;
-import com.playcode.runrunrun.utils.AccessUtils;
 import com.playcode.runrunrun.utils.RetrofitHelper;
-import com.playcode.runrunrun.utils.ToastUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,11 +66,11 @@ public class RunRecordFragment extends Fragment {
      * 获取用户跑步记录
      */
     private void initData() {
-        if (!AccessUtils.isNetworkConnected(getContext())) {
-//            Toast.makeText(getActivity(), "网络未连接~", Toast.LENGTH_SHORT).show();
-            ToastUtils.showToast(getActivity(), "网络未连接~");
-            return;
-        }
+//        if (!AccessUtils.isNetworkConnected(getContext())) {
+////            Toast.makeText(getActivity(), "网络未连接~", Toast.LENGTH_SHORT).show();
+//            ToastUtils.showToast(getActivity(), "网络未连接~");
+//            return;
+//        }
 
         ProgressDialog dialog = new ProgressDialog(getActivity());
         dialog.setTitle("正在读取数据...");

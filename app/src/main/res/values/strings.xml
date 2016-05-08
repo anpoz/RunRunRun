@@ -75,5 +75,10 @@
     <string name="reg_failed_network_error">注册失败~网络错误</string>
     <string name="reg_failed_email_had_been_token">注册失败~E-mail已被占用</string>
     <string name="reg_success">注册成功</string>
+    <string name="refresh_failed_network">网络错误，刷新失败...</string>
+    <string name="refresh_failed_reason">刷新失败，</string>
+    <string name="load_failed_reason">加载失败，</string>
+    <string name="no_more">没有更多了</string>
+    <string name="load_failed_network">网络错误，加载失败...</string>
 
 </resources>

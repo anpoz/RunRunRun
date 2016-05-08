@@ -8,6 +8,7 @@ import java.sql.Timestamp;
  * Created by anpoz on 2016/4/2.
  */
 public class RecordsEntity implements Serializable {
+    private static final long serialVersionUID = 1L;
     private int id;
     private String name;
     private String email;
