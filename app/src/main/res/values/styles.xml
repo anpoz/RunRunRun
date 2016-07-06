@@ -8,9 +8,6 @@
         <item name="colorPrimaryDark">@color/primary_dark</item>
         <!--按钮选中或者点击获得焦点后的颜色-->
         <item name="colorAccent">@color/accent</item>
-        <item name="colorControlActivated">@color/primary_dark</item>
-        <item name="divider">@color/divider</item>
-        <item name="android:textCursorDrawable">@color/accent</item>
     </style>
 
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>
@@ -21,6 +18,11 @@
         <!--按钮选中或者点击获得焦点后的颜色-->
         <item name="colorAccent">@color/accent</item>
         <item name="android:windowNoTitle">false</item>
+    </style>
+
+    <style name="AppTheme.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
     </style>
 
 </resources>

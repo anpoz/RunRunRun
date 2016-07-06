@@ -2,6 +2,7 @@ package com.playcode.runrunrun.utils;
 
 import com.google.gson.GsonBuilder;
 import com.playcode.runrunrun.App;
+import com.playcode.runrunrun.BuildConfig;
 
 import java.io.File;
 
@@ -11,6 +12,7 @@ import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -51,7 +53,16 @@ public class RetrofitHelper {
 
         File httpCacheDir = new File(App.getContext().getCacheDir(), "responses");
         Cache cache = new Cache(httpCacheDir, 1024 * 1024 * 10);//10M
-        OkHttpClient client = new OkHttpClient.Builder()
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        if (BuildConfig.DEBUG) {
+            // Log信息拦截器
+            HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+            loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+            //设置 Debug Log 模式
+            builder.addInterceptor(loggingInterceptor);
+        }
+
+        OkHttpClient client = builder
                 .addInterceptor(interceptor)
                 .cache(cache)
                 .build();

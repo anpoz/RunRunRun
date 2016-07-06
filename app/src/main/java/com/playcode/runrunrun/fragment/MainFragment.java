@@ -9,10 +9,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.playcode.runrunrun.App;
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.model.RecordsEntity;
 import com.playcode.runrunrun.utils.APIUtils;
 import com.playcode.runrunrun.utils.RetrofitHelper;
+
+import java.util.List;
+import java.util.Locale;
 
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -43,40 +47,45 @@ public class MainFragment extends Fragment {
     }
 
     private void initData() {
-//        if (!AccessUtils.isNetworkConnected(getContext())) {
-////            Toast.makeText(getActivity(), "网络未连接~", Toast.LENGTH_SHORT).show();
-//            ToastUtils.showToast(getActivity(),"网络未连接~");
-//            return;
-//        }
-        SharedPreferences setting = getActivity().getSharedPreferences("UserData", 0);
-        String token = setting.getString("token", "0");
-        if (token.equals(""))
-            return;
+        if (App.getServerMode() == App.SERVER_MODE.WITHOUT_SERVER) {
+            List<RecordsEntity> recordsEntity = RecordsEntity.listAll(RecordsEntity.class);
+            if (recordsEntity != null && !recordsEntity.isEmpty())
+                setupData(recordsEntity);
+        } else {
+            SharedPreferences setting = getActivity().getSharedPreferences("UserData", 0);
+            String token = setting.getString("token", "0");
+            if (token.equals(""))
+                return;
 
-        RetrofitHelper.getInstance()
-                .getService(APIUtils.class)
-                .getUserRecords(token)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(userRecordModel -> {
+            RetrofitHelper.getInstance()
+                    .getService(APIUtils.class)
+                    .getUserRecords(token)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(userRecordModel -> {
 //                    if (userRecordModel.getResultCode() != 0) {
 //                        Toast.makeText(getActivity(), userRecordModel.getMessage(), Toast.LENGTH_SHORT).show();
 //                        return;
 //                    }
-                    if (userRecordModel.getRecords() != null && userRecordModel.getRecords().size() != 0) {
-                        int size = userRecordModel.getRecords().size();
-                        float timeCount = 0;
-                        float distanceCount = 0;
-                        for (int i = 0; i < size; i++) {
-                            RecordsEntity recordsEntity = userRecordModel.getRecords().get(i);
-                            timeCount += recordsEntity.getRunTime();
-                            distanceCount += recordsEntity.getDistance();
+                        if (userRecordModel.getRecords() != null && userRecordModel.getRecords().size() != 0) {
+                            setupData(userRecordModel.getRecords());
                         }
-                        distance.setText(String.format("%.2f", distanceCount / 1000));
-                        time.setText(String.format("%.2f", timeCount / 3600));
-                        count.setText(size + "");
-                    }
-                });
+                    });
+        }
+    }
+
+    private void setupData(List<RecordsEntity> records) {
+        int size = records.size();
+        float timeCount = 0;
+        float distanceCount = 0;
+        for (int i = 0; i < size; i++) {
+            RecordsEntity recordsEntity = records.get(i);
+            timeCount += recordsEntity.getRunTime();
+            distanceCount += recordsEntity.getDistance();
+        }
+        distance.setText(String.format(Locale.getDefault(), "%.2f", distanceCount / 1000));
+        time.setText(String.format(Locale.getDefault(), "%.2f", timeCount / 3600));
+        count.setText(String.valueOf(size));
     }
 
     @Override

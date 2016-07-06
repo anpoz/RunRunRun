@@ -1,6 +1,5 @@
 package com.playcode.runrunrun.activity;
 
-import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
@@ -15,10 +14,15 @@ import com.amap.api.maps.UiSettings;
 import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.MyLocationStyle;
 import com.amap.api.maps.model.PolylineOptions;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
+import com.playcode.runrunrun.App;
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.model.RecordsEntity;
 import com.playcode.runrunrun.utils.BOSUtils;
 
+import java.lang.reflect.Type;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -48,12 +52,10 @@ public class ShowDetailActivity extends AppCompatActivity implements AMap.OnMapL
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_show_detail);
-        Intent intent = getIntent();
-        runRecord = (RecordsEntity) intent.getSerializableExtra("runRecord");
+        runRecord = (RecordsEntity) getIntent().getSerializableExtra("runRecord");
         initView();
         setData();
         initMapView(savedInstanceState);
-//        downloadPoints();
     }
 
     private void setData() {
@@ -68,12 +70,12 @@ public class ShowDetailActivity extends AppCompatActivity implements AMap.OnMapL
         df = new DecimalFormat("#0.0");
         String calorieStr = df.format(runRecord.getCalorie());
 
-        sdf = new SimpleDateFormat(getString(R.string.min_format),Locale.getDefault());
+        sdf = new SimpleDateFormat(getString(R.string.min_format), Locale.getDefault());
         float avgtime = (float) ((1.0 / ((runRecord.getDistance() / 1000) /
                 runRecord.getRunTime())) * 1000 - 8 * 3600 * 1000);
         String speedStr = sdf.format(avgtime);
 
-        sdf = new SimpleDateFormat(getString(R.string.date_hour_format),Locale.getDefault());
+        sdf = new SimpleDateFormat(getString(R.string.date_hour_format), Locale.getDefault());
         String dateStr = sdf.format(runRecord.getDate());
 
         distance.setText(distanceStr);
@@ -128,45 +130,58 @@ public class ShowDetailActivity extends AppCompatActivity implements AMap.OnMapL
      */
     private void downloadPoints() {
 
-        mSubscription = BOSUtils.getInstance()
-                .downloadPoints(runRecord.getPointsKey())
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<List<LatLng>>() {
-                    @Override
-                    public void onCompleted() {
+        if (App.getServerMode() == App.SERVER_MODE.WITHOUT_SERVER) {
+            Type type = new TypeToken<ArrayList<JsonObject>>() {
+            }.getType();
+            ArrayList<JsonObject> jsonObjs = new Gson().fromJson(runRecord.getPointsStr(), type);
 
-                    }
+            ArrayList<LatLng> listOfT = new ArrayList<>();
+            for (JsonObject jsonObj : jsonObjs) {
+                listOfT.add(new Gson().fromJson(jsonObj, LatLng.class));
+            }
+            points = listOfT;
+        } else {
+            mSubscription = BOSUtils.getInstance()
+                    .downloadPoints(runRecord.getPointsKey())
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new Observer<List<LatLng>>() {
+                        @Override
+                        public void onCompleted() {
 
-                    @Override
-                    public void onError(Throwable e) {
-                        e.printStackTrace();
-                    }
-
-                    @Override
-                    public void onNext(List<LatLng> latLngs) {
-                        points = latLngs;
-                        aMap.addPolyline(polylineOptions.addAll(points));
-                        double maxLat = points.get(0).latitude, minLat = points.get(0).latitude,
-                                maxLong = points.get(0).longitude, minLong = points.get(0).longitude;
-                        for (LatLng point : latLngs) {
-                            if (point.latitude > maxLat) {
-                                maxLat = point.latitude;
-                            }
-                            if (point.latitude < minLat) {
-                                minLat = point.latitude;
-                            }
-                            if (point.longitude > maxLong) {
-                                maxLong = point.longitude;
-                            }
-                            if (point.longitude < minLat) {
-                                minLong = point.longitude;
-                            }
                         }
-                        aMap.moveCamera(CameraUpdateFactory.changeLatLng(new LatLng((maxLat + minLat) / 2, (maxLong + minLong) / 2)));
-                    }
-                });
 
+                        @Override
+                        public void onError(Throwable e) {
+                            e.printStackTrace();
+                        }
+
+                        @Override
+                        public void onNext(List<LatLng> latLngs) {
+                            points = latLngs;
+                        }
+                    });
+        }
+        if (points.size() == 0)
+            return;
+        aMap.addPolyline(polylineOptions.addAll(points));
+        double maxLat = points.get(0).latitude, minLat = points.get(0).latitude,
+                maxLong = points.get(0).longitude, minLong = points.get(0).longitude;
+        for (LatLng point : points) {
+            if (point.latitude > maxLat) {
+                maxLat = point.latitude;
+            }
+            if (point.latitude < minLat) {
+                minLat = point.latitude;
+            }
+            if (point.longitude > maxLong) {
+                maxLong = point.longitude;
+            }
+            if (point.longitude < minLat) {
+                minLong = point.longitude;
+            }
+        }
+        aMap.moveCamera(CameraUpdateFactory.changeLatLng(new LatLng((maxLat + minLat) / 2, (maxLong + minLong) / 2)));
     }
 
     @Override
@@ -218,7 +233,6 @@ public class ShowDetailActivity extends AppCompatActivity implements AMap.OnMapL
         super.onSaveInstanceState(outState);
         mapView.onSaveInstanceState(outState);
     }
-
 
 
     @Override

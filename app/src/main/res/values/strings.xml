@@ -80,5 +80,6 @@
     <string name="load_failed_reason">加载失败，</string>
     <string name="no_more">没有更多了</string>
     <string name="load_failed_network">网络错误，加载失败...</string>
+    <string name="sync_records">同步记录</string>
 
 </resources>

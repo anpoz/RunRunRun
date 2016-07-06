@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.playcode.runrunrun.App;
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.model.RecordsEntity;
 import com.playcode.runrunrun.utils.APIUtils;
@@ -66,22 +67,15 @@ public class DataAnalysisFragment extends Fragment {
     }
 
     private void initChart() {
-//        if (!AccessUtils.isNetworkConnected(getContext())) {
-////            Toast.makeText(getActivity(), "网络未连接~", Toast.LENGTH_SHORT).show();
-//            ToastUtils.showToast(getActivity(), "网络未连接~");
-//            return;
-//        }
-
-        SharedPreferences preferences = getActivity().getSharedPreferences("UserData", 0);
-        String token = preferences.getString("token", "");
-        if (token.equals("")) {//无数据
-            mList = new ArrayList<>();
+        if (App.getServerMode() == App.SERVER_MODE.WITHOUT_SERVER) {
+            mList = RecordsEntity.listAll(RecordsEntity.class);
             setupSummary();
-            setupChart();
         } else {
-            setupChart();
+            SharedPreferences preferences = getActivity().getSharedPreferences("UserData", 0);
+            String token = preferences.getString("token", "");
             prepareData(token);
         }
+        setupChart();
     }
 
 

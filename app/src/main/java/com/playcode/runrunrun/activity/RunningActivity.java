@@ -1,5 +1,6 @@
 package com.playcode.runrunrun.activity;
 
+import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -33,6 +34,7 @@ import com.amap.api.services.geocoder.GeocodeSearch;
 import com.amap.api.services.geocoder.RegeocodeAddress;
 import com.amap.api.services.geocoder.RegeocodeQuery;
 import com.google.gson.Gson;
+import com.playcode.runrunrun.App;
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.model.MessageModel;
 import com.playcode.runrunrun.model.RecordsEntity;
@@ -40,8 +42,8 @@ import com.playcode.runrunrun.utils.APIUtils;
 import com.playcode.runrunrun.utils.AccessUtils;
 import com.playcode.runrunrun.utils.BOSUtils;
 import com.playcode.runrunrun.utils.RetrofitHelper;
+import com.tbruyelle.rxpermissions.RxPermissions;
 
-import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,32 +55,32 @@ import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 
 public class RunningActivity extends AppCompatActivity implements AMapLocationListener, LocationSource,
         AMap.OnMapLoadedListener, View.OnClickListener {
 
-    private static final int MIN_ALLOW_DISTANCE = 30;
+    private static final int MIN_ALLOW_DISTANCE = 1;
     private AMapLocationClient locationClient;
     private AMapLocationClientOption locationClientOption;
     private AMap aMap;
     //处理定位更新的接口
     private OnLocationChangedListener mListener;
     private static final String INFO = "info";
-    MapView mapView;
-    TextView showTime, showDistance;
-    LatLng currentLatLng;
-    float distance;
-    Button start, stop;
+    private MapView mapView;
+    private TextView showTime, showDistance;
+    private float distance;
+    private Button start;
     //标识跑步状态
-    volatile boolean isStart = false;
-    boolean isFirstStart = true;
+    private volatile boolean isStart = false;
+    private boolean isFirstStart = true;
     //轨迹点集合
     private List<LatLng> points = new ArrayList<>();
     private PolylineOptions polylineOptions;
     //计时器变量
-    long firstStartTime, currentTime, startTime = 0, sumTime = 0;
+    private long firstStartTime, currentTime, startTime = 0, sumTime = 0;
 
     private RecordsEntity runRecord = new RecordsEntity();
     private String token;
@@ -107,9 +109,7 @@ public class RunningActivity extends AppCompatActivity implements AMapLocationLi
             new AlertDialog
                     .Builder(this)
                     .setTitle(getString(R.string.gps_warning))
-                    .setPositiveButton(getString(R.string.dont_offer), (dialog, which) -> {
-                        RunningActivity.this.finish();
-                    })
+                    .setPositiveButton(getString(R.string.dont_offer), (dialog, which) -> RunningActivity.this.finish())
                     .setNegativeButton(getString(R.string.go_offer), (dialog, which) -> {
                         Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                         startActivityForResult(intent, 0);
@@ -133,8 +133,16 @@ public class RunningActivity extends AppCompatActivity implements AMapLocationLi
         //启动定位，调用onLocationChange
         locationClient.startLocation();
 
+        //检查所需权限是否已获取
+        RxPermissions.getInstance(this)
+                .request(Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        Manifest.permission.READ_PHONE_STATE)
+                .subscribe(granted -> {
+                    if (!granted)
+                        RunningActivity.this.finish();
+                });
     }
-
 
     private void init(Bundle savedInstanceState) {
 
@@ -142,7 +150,7 @@ public class RunningActivity extends AppCompatActivity implements AMapLocationLi
         showTime = (TextView) findViewById(R.id.show_time);
         showDistance = (TextView) findViewById(R.id.show_distance);
         start = (Button) findViewById(R.id.start);
-        stop = (Button) findViewById(R.id.stop);
+        Button stop = (Button) findViewById(R.id.stop);
 
         start.setOnClickListener(this);
         stop.setOnClickListener(this);
@@ -155,13 +163,6 @@ public class RunningActivity extends AppCompatActivity implements AMapLocationLi
             polylineOptions = new PolylineOptions();
             polylineOptions.width(30);
             polylineOptions.color(ContextCompat.getColor(this, R.color.primary_dark));
-//            polylineOptions.useGradient(true);
-//            List<Integer>colors = new ArrayList<>();
-//            colors.add(0xff00ff00);
-//            colors.add(0xffff0000);
-//            colors.add(0xff0000ff );
-//            polylineOptions.colorValues(colors);
-
         }
     }
 
@@ -185,7 +186,7 @@ public class RunningActivity extends AppCompatActivity implements AMapLocationLi
                         //记录初次开始毫秒数
                         firstStartTime = System.currentTimeMillis();
                         isFirstStart = false;
-                        runRecord.setDate(new Timestamp(firstStartTime));
+                        runRecord.setDate(firstStartTime);
                     } else {
                         //每次暂停加起来的毫秒数
                         sumTime = sumTime + System.currentTimeMillis() - startTime;
@@ -267,6 +268,68 @@ public class RunningActivity extends AppCompatActivity implements AMapLocationLi
 
     }
 
+    private Observable<String> getAddress() {
+        GeocodeSearch geocodeSearch = new GeocodeSearch(RunningActivity.this);
+        LatLonPoint point = new LatLonPoint(points.get(0).latitude, points.get(0).longitude);
+        return Observable.create(subscriber -> {
+            try {
+                RegeocodeQuery regeocodeQuery = new RegeocodeQuery(point, 1000, GeocodeSearch.AMAP);
+                RegeocodeAddress regeocodeAddress = geocodeSearch.getFromLocation(regeocodeQuery);
+                if (null != regeocodeAddress) {
+                    subscriber.onNext(regeocodeAddress.getCity() + "." + regeocodeAddress.getDistrict());
+                }
+            } catch (AMapException e) {
+                subscriber.onError(e);
+            }
+            subscriber.onCompleted();
+        });
+    }
+
+
+    private void saveData() {
+
+        getAddress()
+                .subscribeOn(Schedulers.io())
+                .flatMap((Func1<String, Observable<RecordsEntity>>) s -> {
+                    float runTime = (currentTime + 8 * 60 * 60 * 1000) / 1000;
+                    //速度 米/秒
+                    float speed = distance / runTime;
+                    //速度 分钟/400米
+                    speed = 400 / speed / 60;
+                    //跑步热量（kcal）＝体重（kg）×运动时间（hour）×指数K  指数K＝30÷速度（分钟/400米）
+                    float calorie = weight * (runTime / 3600) * (30 / speed);
+
+                    runRecord.setRunTime(runTime);
+                    runRecord.setCalorie(calorie);
+                    runRecord.setDistance(distance);
+                    runRecord.setAddress(s);
+
+                    String pointsKey = UUID.randomUUID().toString();
+                    runRecord.setPointsKey(pointsKey);
+
+                    Gson gson = new Gson();
+                    runRecord.setPointsStr(gson.toJson(points));
+
+                    //存入数据库
+                    runRecord.save();
+                    return Observable.just(runRecord);
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(recordsEntity -> {
+                    Intent intent1 = new Intent(RunningActivity.this, ShowDetailActivity.class);
+                    intent1.putExtra("runRecord", recordsEntity);
+                    startActivity(intent1);
+                    if (locationClient != null) {
+                        locationClient.stopLocation();
+                        locationClient.onDestroy();
+                        locationClient = null;
+                        locationClientOption = null;
+                    }
+                    RunningActivity.this.finish();
+                });
+
+    }
+
     private Observable<MessageModel> uploadRecord(String address) {
         SimpleDateFormat sdf = new SimpleDateFormat(getString(R.string.date_format), Locale.getDefault());
         String date = sdf.format(runRecord.getDate());
@@ -319,9 +382,10 @@ public class RunningActivity extends AppCompatActivity implements AMapLocationLi
             builder.setMessage("保存本次运动");
             builder.setNegativeButton("取消", null);
             builder.setPositiveButton("确定", (dialog, which) -> {
-
-                uploadData();
-
+                if (App.getServerMode() == App.SERVER_MODE.WITH_SERVER)
+                    uploadData();
+                else
+                    saveData();
             });
             builder.show();
         }
@@ -331,13 +395,15 @@ public class RunningActivity extends AppCompatActivity implements AMapLocationLi
     /**
      * 启动计时器的方法
      */
-    public void startTimer() {
+    private void startTimer() {
 
         mTimer = Observable.interval(1, TimeUnit.SECONDS)
                 .subscribeOn(Schedulers.computation())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(aLong -> {
-                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
+                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
+                            getString(R.string.time_format),
+                            Locale.getDefault());
                     currentTime = System.currentTimeMillis() - firstStartTime - 8 * 60 * 60 * 1000 - sumTime;
                     showTime.setText(simpleDateFormat.format(currentTime));
                 });
@@ -386,7 +452,7 @@ public class RunningActivity extends AppCompatActivity implements AMapLocationLi
             if (aMapLocation.getErrorCode() == 0) {
                 //显示系统小蓝点
                 mListener.onLocationChanged(aMapLocation);
-                currentLatLng = new LatLng(aMapLocation.getLatitude(), aMapLocation.getLongitude());
+                LatLng currentLatLng = new LatLng(aMapLocation.getLatitude(), aMapLocation.getLongitude());
                 //精度小于预定值且开始运动
                 if (aMapLocation.getAccuracy() < 15 && isStart) {
                     aMap.addPolyline(polylineOptions.add(currentLatLng));
@@ -422,6 +488,13 @@ public class RunningActivity extends AppCompatActivity implements AMapLocationLi
         if (aMap != null) {
             aMap.clear();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mapView.onResume();
+        onMapLoaded();
     }
 
     @Override

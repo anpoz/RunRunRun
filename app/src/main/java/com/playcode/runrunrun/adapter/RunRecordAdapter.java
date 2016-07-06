@@ -9,8 +9,8 @@ import android.widget.TextView;
 
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.model.RecordsEntity;
+import com.playcode.runrunrun.utils.RxBus;
 
-import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -22,8 +22,6 @@ import java.util.Locale;
 public class RunRecordAdapter extends RecyclerView.Adapter<RunRecordAdapter.MyViewHolder> implements
         View.OnClickListener {
 
-
-    private OnItemClickListener mListener;
     private List<RecordsEntity> mList;
     private Context mContext;
 
@@ -33,7 +31,7 @@ public class RunRecordAdapter extends RecyclerView.Adapter<RunRecordAdapter.MyVi
     }
 
     public void updateMyList(List<RecordsEntity> records) {
-        mList.addAll(mList.size(), records);
+        mList = records;
         notifyDataSetChanged();
     }
 
@@ -59,9 +57,8 @@ public class RunRecordAdapter extends RecyclerView.Adapter<RunRecordAdapter.MyVi
         holder.distance.setText(distance);
         holder.runTime.setText(runTime);
         holder.calorie.setText(calorie);
-        Timestamp timestamp = mList.get(position).getDate();
         sdf = new SimpleDateFormat(mContext.getString(R.string.month_day_format), Locale.getDefault());
-        holder.date.setText(sdf.format(timestamp));
+        holder.date.setText(sdf.format(mList.get(position).getDate()));
         holder.itemView.setTag(mList.get(position));
     }
 
@@ -72,25 +69,15 @@ public class RunRecordAdapter extends RecyclerView.Adapter<RunRecordAdapter.MyVi
 
     @Override
     public void onClick(View v) {
-        if (mListener != null) {
-            mListener.onItemClick(v, (RecordsEntity) v.getTag());
-        }
+        RxBus.getInstance()
+                .post(v.getTag());
     }
 
-
-    public interface OnItemClickListener {
-        void onItemClick(View view, RecordsEntity runRecord);
-    }
-
-    public void setOnItemClickListener(OnItemClickListener onItemClickListener) {
-        mListener = onItemClickListener;
-    }
-
-    public static class MyViewHolder extends RecyclerView.ViewHolder {
+    static class MyViewHolder extends RecyclerView.ViewHolder {
 
         TextView distance, runTime, calorie, date;
 
-        public MyViewHolder(View itemView) {
+        MyViewHolder(View itemView) {
             super(itemView);
             distance = (TextView) itemView.findViewById(R.id.tv_distance);
             runTime = (TextView) itemView.findViewById(R.id.tv_runtime);

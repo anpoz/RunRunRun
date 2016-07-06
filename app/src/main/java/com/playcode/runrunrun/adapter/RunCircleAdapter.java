@@ -9,6 +9,7 @@ import android.widget.TextView;
 
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.model.RecordsEntity;
+import com.playcode.runrunrun.utils.RxBus;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -22,20 +23,10 @@ public class RunCircleAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
 
     private List<RecordsEntity> mList;
     private Context mContext;
-    private OnItemClickListener mOnItemClickListener;
-
-
-    public interface OnItemClickListener {
-        void itemClick(View v, RecordsEntity recordsEntity);
-    }
 
     public RunCircleAdapter(List<RecordsEntity> list, Context context) {
         mList = list;
         mContext = context;
-    }
-
-    public void setOnItemClickListener(OnItemClickListener onItemClickListener) {
-        mOnItemClickListener = onItemClickListener;
     }
 
     @Override
@@ -63,8 +54,7 @@ public class RunCircleAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         _holder.mTextViewCalorie.setText(String.format(Locale.getDefault(), "%.2fKcal", mList.get(position).getCalorie()));
 
         SimpleDateFormat format2 = new SimpleDateFormat(mContext.getString(R.string.hour_min_format), Locale.getDefault());
-        _holder.mTextViewDate.setText(format2.format(mList.get(position).getDate().getTime()));
-
+        _holder.mTextViewDate.setText(format2.format(mList.get(position).getDate()));
     }
 
     public void updateDataSet(List<RecordsEntity> list) {
@@ -88,10 +78,11 @@ public class RunCircleAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
 
     @Override
     public void onClick(View v) {
-        mOnItemClickListener.itemClick(v, (RecordsEntity) v.getTag());
+        RxBus.getInstance()
+                .post(v.getTag());
     }
 
-    public static class RunCircleViewHolder extends RecyclerView.ViewHolder {
+    private static class RunCircleViewHolder extends RecyclerView.ViewHolder {
         TextView mTextViewName;
         TextView mTextViewAddress;
         TextView mTextViewDistance;
@@ -99,7 +90,7 @@ public class RunCircleAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         TextView mTextViewCalorie;
         TextView mTextViewDate;
 
-        public RunCircleViewHolder(View itemView) {
+        RunCircleViewHolder(View itemView) {
             super(itemView);
             mTextViewName = (TextView) itemView.findViewById(R.id.tvCardName);
             mTextViewAddress = (TextView) itemView.findViewById(R.id.tvCardAddress);

@@ -8,6 +8,8 @@
     android:clickable="true">
 
     <LinearLayout
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:layout_marginEnd="@dimen/activity_vertical_margin"
         android:id="@+id/vNavigationHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

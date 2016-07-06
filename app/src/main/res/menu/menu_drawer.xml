@@ -24,6 +24,9 @@
         android:id="@+id/drawer_menu_group2"
         android:checkableBehavior="none">
         <item
+            android:id="@+id/sync_records"
+            android:title="@string/sync_records"/>
+        <item
             android:id="@+id/night_mode_switch"
             android:title="@string/switch_theme"/>
         <item

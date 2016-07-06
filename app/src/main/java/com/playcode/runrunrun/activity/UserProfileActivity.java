@@ -174,21 +174,24 @@ public class UserProfileActivity extends AppCompatActivity {
         if (!AccessUtils.isNetworkConnected(this)) {
             return;
         }
-        File file = new File(String.format("%s%s%s.tmp", getExternalCacheDir().getPath(), File.separator, photoKey));
-        BOSUtils.getInstance()
-                .getFileWithKey(file, photoKey)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(file1 -> {
-                    Picasso.with(UserProfileActivity.this)
-                            .load(file1)
-                            .placeholder(R.drawable.img_circle_placeholder)
-                            .error(R.mipmap.ic_launcher)
-                            .resize(avatarSize, avatarSize)
-                            .centerCrop()
-                            .transform(new CircleTransformation())
-                            .into(mImageView);
-                });
+        File cachePath = getExternalCacheDir();
+        if (cachePath != null) {
+            File file = new File(String.format("%s%s%s.tmp", cachePath.getPath(), File.separator, photoKey));
+            BOSUtils.getInstance()
+                    .getFileWithKey(file, photoKey)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(file1 -> {
+                        Picasso.with(UserProfileActivity.this)
+                                .load(file1)
+                                .placeholder(R.drawable.img_circle_placeholder)
+                                .error(R.mipmap.ic_launcher)
+                                .resize(avatarSize, avatarSize)
+                                .centerCrop()
+                                .transform(new CircleTransformation())
+                                .into(mImageView);
+                    });
+        }
     }
 
     private void startZoomPhoto(Uri uri) {//裁剪

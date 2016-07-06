@@ -16,7 +16,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
-import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
@@ -24,6 +23,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.playcode.runrunrun.App;
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.fragment.DataAnalysisFragment;
 import com.playcode.runrunrun.fragment.MainFragment;
@@ -78,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initView() {
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawerLayout);
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mNavigationView = (NavigationView) findViewById(R.id.vNavigation);
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         avatarSize = getResources().getDimensionPixelSize(R.dimen.global_menu_avatar_size);
@@ -97,8 +97,8 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
                 SharedPreferences setting = getSharedPreferences("UserData", 0);
-                String token = setting.getString("token", "");
-                float weight = setting.getFloat("weight", 0);
+                String token = setting.getString("token", "1");
+                float weight = setting.getFloat("weight", 60);
                 if (TextUtils.isEmpty(token)) {
                     Toast.makeText(this, "请先登录", Toast.LENGTH_SHORT).show();
                 } else if (weight == 0) {
@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         mUserProfilePhoto.setOnClickListener(v -> {
-            mDrawerLayout.closeDrawer(Gravity.LEFT);
+            mDrawerLayout.closeDrawer(GravityCompat.START);
 
             SharedPreferences setting = getSharedPreferences("UserData", 0);
             String token = setting.getString("token", "");
@@ -175,6 +175,9 @@ public class MainActivity extends AppCompatActivity {
                             .commit();
                     mToolbar.setTitle("跑步圈");
                     break;
+                case R.id.sync_records:
+                    //TODO 同步记录到服务器
+                    break;
                 case R.id.night_mode_switch:
                     int curNightNightMode = getResources().getConfiguration().uiMode &
                             Configuration.UI_MODE_NIGHT_MASK;
@@ -236,46 +239,47 @@ public class MainActivity extends AppCompatActivity {
      * @param photoKey 头像文件的唯一key
      */
     private void setupPhoto(String photoKey) {
-        if (!AccessUtils.isNetworkConnected(this)) {
+        if (!AccessUtils.isNetworkConnected(this) || App.getServerMode() == App.SERVER_MODE.WITHOUT_SERVER) {
             return;
         }
-        File file = new File(String.format("%s%s%s.tmp", getExternalCacheDir().getPath(), File.separator, photoKey));
+        File cachePath = getExternalCacheDir();
+        if (cachePath != null) {
+            File file = new File(String.format("%s%s%s.tmp", cachePath.getPath(), File.separator, photoKey));
+            BOSUtils.getInstance()
+                    .getFileWithKey(file, photoKey)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new Subscriber<File>() {
+                        @Override
+                        public void onCompleted() {
 
-        BOSUtils.getInstance()
-                .getFileWithKey(file, photoKey)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<File>() {
-                    @Override
-                    public void onCompleted() {
+                        }
 
-                    }
+                        @Override
+                        public void onError(Throwable e) {
+                            e.printStackTrace();
+                            Picasso.with(MainActivity.this)
+                                    .load(R.mipmap.ic_launcher)
+                                    .placeholder(R.drawable.img_circle_placeholder)
+                                    .resize(avatarSize, avatarSize)
+                                    .centerCrop()
+                                    .transform(new CircleTransformation())
+                                    .into(mUserProfilePhoto);
+                        }
 
-                    @Override
-                    public void onError(Throwable e) {
-                        e.printStackTrace();
-                        Picasso.with(MainActivity.this)
-                                .load(R.mipmap.ic_launcher)
-                                .placeholder(R.drawable.img_circle_placeholder)
-                                .resize(avatarSize, avatarSize)
-                                .centerCrop()
-                                .transform(new CircleTransformation())
-                                .into(mUserProfilePhoto);
-                    }
-
-                    @Override
-                    public void onNext(File file1) {
-                        Picasso.with(MainActivity.this)
-                                .load(file1)
-                                .placeholder(R.drawable.img_circle_placeholder)
-                                .error(R.mipmap.ic_launcher)
-                                .resize(avatarSize, avatarSize)
-                                .centerCrop()
-                                .transform(new CircleTransformation())
-                                .into(mUserProfilePhoto);
-                    }
-                });
-
+                        @Override
+                        public void onNext(File file1) {
+                            Picasso.with(MainActivity.this)
+                                    .load(file1)
+                                    .placeholder(R.drawable.img_circle_placeholder)
+                                    .error(R.mipmap.ic_launcher)
+                                    .resize(avatarSize, avatarSize)
+                                    .centerCrop()
+                                    .transform(new CircleTransformation())
+                                    .into(mUserProfilePhoto);
+                        }
+                    });
+        }
     }
 
     /**

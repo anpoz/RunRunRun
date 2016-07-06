@@ -68,7 +68,7 @@ public class BOSUtils {
 
     public Observable<String> uploadFile(InputStream inputStream, String key) {
         refreshBOSClient();
-        return Observable.create((Observable.OnSubscribe<String>) subscriber -> {
+        return Observable.create(subscriber -> {
             try {
                 subscriber.onNext(mBosClient.putObject(BUCKET_NAME, key, inputStream).getETag());
             } catch (Exception e) {
@@ -81,7 +81,7 @@ public class BOSUtils {
 
     public Observable<File> getFileWithKey(File file, String key) {
         refreshBOSClient();
-        return Observable.create((Observable.OnSubscribe<File>) subscriber -> {
+        return Observable.create(subscriber -> {
             try {
                 OutputStream os = new FileOutputStream(file);
                 InputStream in = getInputStreamWithKey(key);
@@ -108,7 +108,7 @@ public class BOSUtils {
 
     public Observable<String> uploadPoints(String pointsStr, String pointskey) {
         refreshBOSClient();
-        return Observable.create((Observable.OnSubscribe<String>) subscriber -> {
+        return Observable.create(subscriber -> {
             try {
                 subscriber.onNext(mBosClient.putObject(BUCKET_NAME, pointskey, pointsStr).getETag());
             } catch (Exception e) {
@@ -121,7 +121,7 @@ public class BOSUtils {
 
     public Observable<List<LatLng>> downloadPoints(String key) {
         refreshBOSClient();
-        return Observable.create((Observable.OnSubscribe<List<LatLng>>) subscriber -> {
+        return Observable.create(subscriber -> {
             InputStream is = mBosClient.getObject(BUCKET_NAME, key).getObjectContent();
             BufferedReader br = new BufferedReader(new InputStreamReader(is));
             StringBuilder sb = new StringBuilder();

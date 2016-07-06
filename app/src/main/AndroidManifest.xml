@@ -33,10 +33,24 @@
         <meta-data
             android:name="com.amap.api.v2.apikey"
             android:value="a39c0e0b00aba3ddf7b4bc88b1c4fffb"/>
+        <meta-data
+            android:name="DATABASE"
+            android:value="sugar_runrunrun.db"/>
+        <meta-data
+            android:name="VERSION"
+            android:value="2"/>
+        <meta-data
+            android:name="QUERY_LOG"
+            android:value="true"/>
+        <meta-data
+            android:name="DOMAIN_PACKAGE_NAME"
+            android:value="com.playcode.runrunrun"/>
 
         <service android:name="com.amap.api.location.APSService"/>
 
-        <activity android:name=".activity.MainActivity">
+        <activity
+            android:name=".activity.MainActivity"
+            android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
@@ -47,8 +61,9 @@
         </activity>
         <activity android:name=".activity.AboutActivity">
         </activity>
-        <activity android:name=".activity.ShowDetailActivity">
-
+        <activity
+            android:name=".activity.ShowDetailActivity"
+            android:launchMode="singleTask">
         </activity>
         <activity android:name=".activity.RunningActivity">
 

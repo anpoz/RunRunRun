@@ -17,6 +17,7 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.playcode.runrunrun.App;
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.model.LoginModel;
 import com.playcode.runrunrun.model.UserModel;
@@ -218,6 +219,7 @@ public class LoginDialog extends Dialog {
                             if (mOnLoginListener != null) {
                                 mOnLoginListener.success();
                             }
+                            App.setServerMode(App.SERVER_MODE.WITH_SERVER);
                         }
                     }
                 });

@@ -1,30 +1,28 @@
 package com.playcode.runrunrun.model;
 
 
+import com.orm.SugarRecord;
+
 import java.io.Serializable;
-import java.sql.Timestamp;
 
 /**
  * Created by anpoz on 2016/4/2.
  */
-public class RecordsEntity implements Serializable {
+public class RecordsEntity extends SugarRecord implements Serializable {
     private static final long serialVersionUID = 1L;
-    private int id;
+    private int _id;
     private String name;
     private String email;
-    private Timestamp date;
+    private long date;
     private float distance;
     private float calorie;
     private float runTime;
     private String pointsKey;
     private String address;
+    private String pointsStr;
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
+    public int get_id() {
+        return _id;
     }
 
     public String getName() {
@@ -43,11 +41,11 @@ public class RecordsEntity implements Serializable {
         this.email = email;
     }
 
-    public Timestamp getDate() {
+    public long getDate() {
         return date;
     }
 
-    public void setDate(Timestamp date) {
+    public void setDate(long date) {
         this.date = date;
     }
 
@@ -91,4 +89,11 @@ public class RecordsEntity implements Serializable {
         this.address = address;
     }
 
+    public String getPointsStr() {
+        return pointsStr;
+    }
+
+    public void setPointsStr(String pointsStr) {
+        this.pointsStr = pointsStr;
+    }
 }

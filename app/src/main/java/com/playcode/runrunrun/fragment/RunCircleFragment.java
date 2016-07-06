@@ -16,6 +16,7 @@ import android.widget.Toast;
 
 import com.orangegangsters.github.swipyrefreshlayout.library.SwipyRefreshLayout;
 import com.orangegangsters.github.swipyrefreshlayout.library.SwipyRefreshLayoutDirection;
+import com.playcode.runrunrun.App;
 import com.playcode.runrunrun.R;
 import com.playcode.runrunrun.activity.ShowDetailActivity;
 import com.playcode.runrunrun.adapter.RunCircleAdapter;
@@ -23,6 +24,7 @@ import com.playcode.runrunrun.model.RecordsEntity;
 import com.playcode.runrunrun.model.RunCircleResultModel;
 import com.playcode.runrunrun.utils.APIUtils;
 import com.playcode.runrunrun.utils.RetrofitHelper;
+import com.playcode.runrunrun.utils.RxBus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,18 +33,18 @@ import rx.Observer;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
+import rx.subscriptions.CompositeSubscription;
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class RunCircleFragment extends Fragment implements SwipyRefreshLayout.OnRefreshListener {
     private SwipyRefreshLayout mSwipeRefreshLayout;
-    private RecyclerView mRecyclerView;
     private RunCircleAdapter mRunCircleAdapter;
+    private CompositeSubscription mSubscriptions;
 
     private List<RecordsEntity> list;
     private int lastItemId = 0;
-
 
     public RunCircleFragment() {
         // Required empty public constructor
@@ -56,26 +58,34 @@ public class RunCircleFragment extends Fragment implements SwipyRefreshLayout.On
         View rootView = inflater.inflate(R.layout.fragment_run_circle, container, false);
 
         initView(rootView);
-//        initRunCircle();
 
         return rootView;
     }
 
     private void initView(View rootView) {
         mSwipeRefreshLayout = (SwipyRefreshLayout) rootView.findViewById(R.id.srl_runCircle);
-        mRecyclerView = (RecyclerView) rootView.findViewById(R.id.rv_runCircle);
+        RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.rv_runCircle);
 
         mSwipeRefreshLayout.setOnRefreshListener(this);
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        mRecyclerView.setItemAnimator(new DefaultItemAnimator());
-
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
         mRunCircleAdapter = new RunCircleAdapter(new ArrayList<>(), getContext());
-        mRunCircleAdapter.setOnItemClickListener((v, recordsEntity) -> {
-            Intent intent1 = new Intent(getActivity(), ShowDetailActivity.class);
-            intent1.putExtra("runRecord", recordsEntity);
-            startActivity(intent1);
-        });
-        mRecyclerView.setAdapter(mRunCircleAdapter);
+
+        mSubscriptions = new CompositeSubscription();
+
+        recyclerView.setAdapter(mRunCircleAdapter);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        mSubscriptions.add(RxBus.getInstance()
+                .toObserable(RecordsEntity.class)
+                .subscribe(recordsEntity -> {
+                    Intent intent1 = new Intent(getActivity(), ShowDetailActivity.class);
+                    intent1.putExtra("runRecord", recordsEntity);
+                    startActivity(intent1);
+                }));
     }
 
     @Override
@@ -84,14 +94,21 @@ public class RunCircleFragment extends Fragment implements SwipyRefreshLayout.On
         initRunCircle();
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mSubscriptions.unsubscribe();
+    }
+
     private void initRunCircle() {
+        if (App.getServerMode() == App.SERVER_MODE.WITHOUT_SERVER)
+            return;
         SharedPreferences preferences = getActivity().getSharedPreferences("UserData", 0);
         String token = preferences.getString("token", "");
         if (TextUtils.isEmpty(token)) {
             Toast.makeText(getContext(), R.string.login_please, Toast.LENGTH_SHORT).show();
             return;
         }
-
         refreshData(token);
     }
 
@@ -140,7 +157,7 @@ public class RunCircleFragment extends Fragment implements SwipyRefreshLayout.On
                             mRunCircleAdapter.resetData(list);
                             lastItemId = runCircleResultModel.getRecords()
                                     .get(runCircleResultModel.getRecords().size() - 1)
-                                    .getId();
+                                    .get_id();
                         } else {
                             Toast.makeText(getActivity(),
                                     getContext().getString(R.string.refresh_failed_reason) +
@@ -177,7 +194,7 @@ public class RunCircleFragment extends Fragment implements SwipyRefreshLayout.On
                                 mRunCircleAdapter.updateDataSet(runCircleResultModel.getRecords());
                                 lastItemId = runCircleResultModel.getRecords()
                                         .get(runCircleResultModel.getRecords().size() - 1)
-                                        .getId();
+                                        .get_id();
                             } else {
                                 Toast.makeText(getContext(), R.string.no_more, Toast.LENGTH_SHORT).show();
                             }
